@@ -1,79 +1,102 @@
-import logging
-import os
-import datetime
+from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
+from datetime import datetime, timedelta
 import threading
+import os
 from dotenv import load_dotenv
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler
-
-
-# ============================== YOUR DETAILS ==============================
 load_dotenv()
+
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = int(os.getenv("CHAT_ID"))
+# === CONFIG ===
 
-# ==========================================================================
 
-# Your full schedule for each Day Order
-DAY_SCHEDULES = {
-    "Day 1": [("8:00 AM", "Computer Networks"), ("10:40 AM", "Machine Learning"), ("12:40 PM", "Python"), ("7:00 PM", "Academic Work")],
-    "Day 2": [("8:00 AM", "Maths"), ("10:40 AM", "Python"), ("12:40 PM", "Mini Project"), ("7:00 PM", "Academic Work")],
-    "Day 3": [("8:00 AM", "OS"), ("10:40 AM", "Python"), ("12:40 PM", "DSA"), ("7:00 PM", "Academic Work")],
-    "Day 4": [("10:40 AM", "ML"), ("12:40 PM", "CN Lab"), ("3:00 PM", "Open Slot"), ("7:00 PM", "Academic Work")],
-    "Day 5": [("9:00 AM", "Python Lab"), ("11:40 AM", "ML"), ("2:40 PM", "Mini Project"), ("7:00 PM", "Academic Work")],
-    "Saturday": [("10:00 AM", "Project Work"), ("3:00 PM", "Hackathon Prep"), ("7:00 PM", "Academic Work")],
-    "Sunday": [("9:00 AM", "Practice DSA"), ("2:00 PM", "Mini Project Work"), ("7:00 PM", "Review + Rest")]
+# === TIMETABLE ===
+TIMETABLE = {
+    "Day 1": [("8:00 AM", "CN"), ("8:50 AM", "CN"), ("9:45 AM", "ML"), ("10:40 AM", "ML"),
+              ("11:35 AM", "SWC"), ("12:30 PM", "eat food"), ("1:25 PM", "do class work"),
+              ("2:20 PM", "do class work"), ("3:10 PM", "do ai python course"),
+              ("4:00 PM", "do ai python course"), ("5:00 PM", "snacks + exercise"),
+              ("6:00 PM", "NPTEL ML"), ("7:00 PM", "NPTEL ML"), ("8:00 PM", "eat food bro"),
+              ("9:00 PM", "DSA")],
+    "Day 2": [("8:00 AM", "Fresh up"), ("8:50 AM", "Food + do incomplete work"),
+              ("9:45 AM", "do ai python course"), ("10:40 AM", "do ai python course"),
+              ("11:35 AM", "eat food"), ("12:30 PM", "FSWD"), ("1:25 PM", "FSWD"),
+              ("2:20 PM", "SWC"), ("3:10 PM", "SWC"), ("4:00 PM", "Break"),
+              ("5:00 PM", "snacks + exercise"), ("6:00 PM", "NPTEL ML"), ("7:00 PM", "NPTEL ML"),
+              ("8:00 PM", "eat food bro"), ("9:00 PM", "DSA")],
+    "Day 3": [("8:00 AM", "DM"), ("8:50 AM", "DM"), ("9:45 AM", "CN"), ("10:40 AM", "FLAA"),
+              ("11:35 AM", "FSWD"), ("12:30 PM", "eat food"), ("1:25 PM", "do ai python course"),
+              ("2:20 PM", "do ai python course"), ("3:10 PM", "academic work"),
+              ("4:00 PM", "academic work"), ("5:00 PM", "snacks + exercise"),
+              ("6:00 PM", "NPTEL ML"), ("7:00 PM", "NPTEL ML"), ("8:00 PM", "eat food bro"),
+              ("9:00 PM", "DSA")],
+    "Day 4": [("8:00 AM", "Fresh up"), ("8:50 AM", "incomplete work"), ("9:45 AM", "Ai python course"),
+              ("10:40 AM", "Ai python course"), ("11:35 AM", "eat food"), ("12:30 PM", "FLAA"),
+              ("1:25 PM", "FLAA"), ("2:20 PM", "FSWD"), ("3:10 PM", "break"), ("4:00 PM", "DM"),
+              ("5:00 PM", "snacks + exercise"), ("6:00 PM", "NPTEL ML"), ("7:00 PM", "NPTEL ML"),
+              ("8:00 PM", "eat food bro"), ("9:00 PM", "DSA")],
+    "Day 5": [("8:00 AM", "Fresh up"), ("8:50 AM", "incomplete work"), ("9:45 AM", "DM"),
+              ("10:40 AM", "ML"), ("11:35 AM", "FLAA"), ("12:30 PM", "eat food"),
+              ("1:25 PM", "DO CN LAB WORK"), ("2:20 PM", "DO CN LAB WORK"),
+              ("3:10 PM", "CN LAB"), ("4:00 PM", "CN LAB"), ("5:00 PM", "snacks + exercise"),
+              ("6:00 PM", "Ai python course"), ("7:00 PM", "NPTEL ML"), ("8:00 PM", "eat food bro"),
+              ("9:00 PM", "DSA")],
+    "Saturday": [("8:00 AM", "Fresh up"), ("8:50 AM", "incomplete work"),
+                 ("9:45 AM", "Ai python course"), ("10:40 AM", "Ai python course"),
+                 ("11:35 AM", "EAT FOOD"), ("12:30 PM", "Project work"),
+                 ("1:25 PM", "Project work"), ("2:20 PM", "Project work"),
+                 ("3:10 PM", "NPTEL ML"), ("4:00 PM", "NPTEL ML"),
+                 ("5:00 PM", "snacks + exercise"), ("6:00 PM", "O.S"),
+                 ("7:00 PM", "O.S"), ("8:00 PM", "eat food bro"), ("9:00 PM", "DSA")],
+    "Sunday": [("8:00 AM", "Fresh up"), ("8:50 AM", "incomplete work"),
+               ("9:45 AM", "Ai python course"), ("10:40 AM", "Ai python course"),
+               ("11:35 AM", "EAT FOOD"), ("12:30 PM", "Project work"),
+               ("1:25 PM", "Project work"), ("2:20 PM", "Project work"),
+               ("3:10 PM", "NPTEL ML"), ("4:00 PM", "NPTEL ML"),
+               ("5:00 PM", "snacks + exercise"), ("6:00 PM", "O.S"),
+               ("7:00 PM", "O.S"), ("8:00 PM", "eat food bro"), ("9:00 PM", "DSA")],
 }
 
-# Enable logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Send inline button menu to user
+# === START MESSAGE ===
 def start(update: Update, context: CallbackContext):
     keyboard = [
-        [InlineKeyboardButton(day, callback_data=day)] for day in DAY_SCHEDULES.keys()
+        [InlineKeyboardButton("Day 1", callback_data='Day 1'),
+         InlineKeyboardButton("Day 2", callback_data='Day 2'),
+         InlineKeyboardButton("Day 3", callback_data='Day 3')],
+        [InlineKeyboardButton("Day 4", callback_data='Day 4'),
+         InlineKeyboardButton("Day 5", callback_data='Day 5')],
+        [InlineKeyboardButton("Saturday", callback_data='Saturday'),
+         InlineKeyboardButton("Sunday", callback_data='Sunday')]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text('🌞 Good morning! Please select today’s Day Order:', reply_markup=reply_markup)
+    update.message.reply_text("🌞 Good morning! Please select today's Day Order:", reply_markup=reply_markup)
 
-# When user taps on Day Order button
+# === SCHEDULE REMINDERS ===
+def schedule_reminders(day):
+    now = datetime.now()
+    for time_str, subject in TIMETABLE[day]:
+        class_time = datetime.strptime(time_str, "%I:%M %p").replace(
+            year=now.year, month=now.month, day=now.day)
+        alert_time = class_time - timedelta(minutes=5)
+        delay = (alert_time - now).total_seconds()
+        if delay > 0:
+            threading.Timer(delay, Bot(BOT_TOKEN).send_message,
+                            args=(CHAT_ID, f"🔔 Reminder: {subject} starts at {time_str}",)).start()
+
+# === HANDLE SELECTION ===
 def button(update: Update, context: CallbackContext):
     query = update.callback_query
-    query.answer()
     selected_day = query.data
-    query.edit_message_text(text=f"✅ Got it! You selected: *{selected_day}*\nYou'll get reminders!", parse_mode='Markdown')
+    query.answer()
+    query.edit_message_text(f"✅ You selected {selected_day}. Notifications will be sent.")
+    schedule_reminders(selected_day)
 
-    # Schedule class reminders
-    for time_str, subject in DAY_SCHEDULES[selected_day]:
-        schedule_reminder(time_str, subject, context)
-
-# Schedule a reminder for a specific time
-def schedule_reminder(time_str, subject, context: CallbackContext):
-    try:
-        class_time = datetime.datetime.strptime(time_str, "%I:%M %p").time()
-        now = datetime.datetime.now()
-        reminder_time = datetime.datetime.combine(now.date(), class_time) - datetime.timedelta(minutes=5)
-        if reminder_time < now:
-            return  # Skip if time already passed
-
-        delay = (reminder_time - now).total_seconds()
-        threading.Timer(delay, send_reminder, args=(subject, time_str, context)).start()
-    except Exception as e:
-        logger.error(f"Failed to schedule reminder for {subject}: {e}")
-
-# Send the reminder message
-def send_reminder(subject, time_str, context: CallbackContext):
-    try:
-        context.bot.send_message(chat_id=CHAT_ID, text=f"🔔 Reminder: *{subject}* starts at {time_str}", parse_mode='Markdown')
-    except Exception as e:
-        logger.error(f"Failed to send reminder: {e}")
-
-# Main function
+# === MAIN ===
 def main():
     updater = Updater(BOT_TOKEN, use_context=True)
     dp = updater.dispatcher
-    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler('start', start))
     dp.add_handler(CallbackQueryHandler(button))
     updater.start_polling()
     updater.idle()
