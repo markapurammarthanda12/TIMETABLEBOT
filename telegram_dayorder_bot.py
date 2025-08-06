@@ -1,12 +1,17 @@
 import logging
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler
+import os
 import datetime
 import threading
+from dotenv import load_dotenv
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler
+
 
 # ============================== YOUR DETAILS ==============================
-BOT_TOKEN = "8287025689:AAGmQV3ffIv_jcaJl_H6L_nHfv55wFasPJg"
-CHAT_ID = 5718210858
+load_dotenv()
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+CHAT_ID = int(os.getenv("CHAT_ID"))
+
 # ==========================================================================
 
 # Your full schedule for each Day Order
