@@ -30,7 +30,7 @@ TIMETABLE = {
               ("2:20 PM", "do ai python course"), ("3:10 PM", "academic work"),
               ("4:00 PM", "academic work"), ("5:00 PM", "snacks + exercise"),
               ("6:00 PM", "NPTEL ML"), ("7:00 PM", "NPTEL ML"), ("8:00 PM", "eat food bro"),
-              ("9:00 PM", "DSA")],
+              ("9:00 PM", "DSA"), ("11:59 PM", "Testing")],
     "Day 4": [("8:00 AM", "Fresh up"), ("8:50 AM", "incomplete work"), ("9:45 AM", "Ai python course"),
               ("10:40 AM", "Ai python course"), ("11:35 AM", "eat food"), ("12:30 PM", "FLAA"),
               ("1:25 PM", "FLAA"), ("2:20 PM", "FSWD"), ("3:10 PM", "break"), ("4:00 PM", "DM"),
