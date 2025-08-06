@@ -1,0 +1,1 @@
+worker: python telegram_dayorder_bot.py
